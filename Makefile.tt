@@ -1,0 +1,47 @@
+include .env
+
+<%- if @install_openapi -%>
+.PHONY: dev env/setup env/teardown codebase codebase/fix doc/generate
+<%- else -%>
+.PHONY: dev env/setup env/teardown codebase codebase/fix
+<%- end -%>
+
+dev:
+	make install-dependencies
+	make env/setup
+	foreman start -f Procfile.dev
+
+env/setup:
+	./bin/envsetup.sh
+	rails db:prepare
+
+env/teardown:  # this command will delete data
+	./bin/envteardown.sh
+
+<%- if WEB_VARIANT -%>
+install-dependencies:
+	bundle install
+	yarn install
+
+codebase:
+	rubocop
+	yarn codebase
+
+codebase/fix:
+	rubocop -a
+	yarn codebase:fix
+<%- else -%>
+install-dependencies:
+	bundle install
+
+codebase:
+	rubocop
+
+codebase/fix:
+	rubocop -a
+<%- end -%>
+<%- if @install_openapi -%>
+
+doc/generate:
+  yarn run build:docs
+<%- end -%>
